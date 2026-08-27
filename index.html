@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🐐 Kshitij Calculator 🐐 </title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    .calculator {
+      width: 440px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+    }
+    .calc-title {
+      text-align: center;
+      margin-bottom: 14px;
+      font-size: 1.8rem; font-weight: 800; letter-spacing: 2px;
+      background: linear-gradient(90deg, #f7971e, #ffd200, #667eea);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .mode-row { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+    .mode-toggle {
+      display: flex; background: rgba(0,0,0,0.3);
+      border-radius: 20px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .mode-toggle button {
+      border: none; background: transparent;
+      color: rgba(255,255,255,0.45); font-size: 0.72rem; font-weight: 700;
+      padding: 5px 14px; cursor: pointer; transition: all 0.2s; letter-spacing: 1px;
+    }
+    .mode-toggle button.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; border-radius: 18px;
+    }
+    .display {
+      background: rgba(0,0,0,0.38); border-radius: 16px;
+      padding: 16px 20px; margin-bottom: 16px;
+      text-align: right; min-height: 90px;
+      display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden;
+    }
+    .display .expression { font-size: 0.85rem; color: rgba(255,255,255,0.45); min-height: 1.2em; word-break: break-all; }
+    .display .result { font-size: 2.3rem; font-weight: 600; color: #fff; word-break: break-all; transition: font-size 0.15s; }
+    .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .numpad-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
+    .section-label {
+      grid-column: span 4; text-align: center;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 2px;
+      color: rgba(255,255,255,0.28); text-transform: uppercase; padding: 4px 0 0;
+    }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.09); margin: 12px 0 4px; }
+    .btn {
+      height: 56px; border: none; border-radius: 13px;
+      font-size: 1.5rem; font-weight: 1000; cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      color: #fff; background: rgba(255,255,255,0.08);
+      user-select: none; display: flex; align-items: center; justify-content: center;
+    }
+    .btn:hover  { background: rgba(255,255,255,0.16); }
+    .btn:active { transform: scale(0.93); }
+    .btn.modifier { background: rgba(255,255,255,0.18); color: #1a1a2e; font-weight: 700; }
+    .btn.modifier:hover { background: rgba(255,255,255,0.3); }
+    .btn.operator { background: linear-gradient(135deg, #f7971e, #ffd200); color: #1a1a2e; font-weight: 700; }
+    .btn.operator:hover { background: linear-gradient(135deg, #ffb347, #ffe259); }
+    .btn.operator.active { box-shadow: 0 0 0 3px rgba(255,210,0,0.5); }
+    .btn.equals { background: linear-gradient(135deg, #667eea, #764ba2); font-weight: 700; }
+    .btn.equals:hover { background: linear-gradient(135deg, #7b93f5, #8b5cbf); }
+    .btn.trig {
+      background: rgba(102,126,234,0.22); color: #a8b8ff;
+      font-size: 1.2rem; font-weight: 700; height: 48px;
+    }
+    .btn.trig:hover { background: rgba(102,126,234,0.38); }
+    .btn.special {
+      background: rgba(247,151,30,0.2); color: #ffd200;
+      font-size: 1.2rem; font-weight: 700; height: 48px;
+    }
+    .btn.special:hover { background: rgba(247,151,30,0.35); }
+    .btn.zero { grid-column: span 2; }
+    .result.error { color: #ff6b6b !important; font-size: 1.4rem !important; }
+    .btn.logfn {
+      background: rgba(52,211,153,0.18); color: #6ee7b7;
+      font-size: 1.1rem; font-weight: 700; height: 48px;
+    }
+    .btn.logfn:hover { background: rgba(52,211,153,0.32); }
+  </style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="calc-title">🐐 Kshitij Da Goat </div>
+
+  <!-- DEG / RAD -->
+  <div class="mode-row">
+    <div class="mode-toggle">
+      <button id="btn-deg" class="active" onclick="setMode('deg')">DEG</button>
+      <button id="btn-rad" onclick="setMode('rad')">RAD</button>
+    </div>
+  </div>
+
+  <!-- Display -->
+  <div class="display">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <!-- Button Grid -->
+  <div class="buttons">
+
+    <!-- Section: Trig & Special -->
+    <div class="section-label">&#9135; Trigonometric &amp; Special Functions &#9135;</div>
+
+    <button class="btn trig"    data-action="func" data-value="sin">sin</button>
+    <button class="btn trig"    data-action="func" data-value="cos">cos</button>
+    <button class="btn trig"    data-action="func" data-value="tan">tan</button>
+    <button class="btn special" data-action="func" data-value="gif">&#x230A;x&#x230B; GIF</button>
+
+    <button class="btn trig"    data-action="func" data-value="cosec">cosec</button>
+    <button class="btn trig"    data-action="func" data-value="sec">sec</button>
+    <button class="btn trig"    data-action="func" data-value="cot">cot</button>
+    <button class="btn special" data-action="func" data-value="sqrt">&#x221A;x</button>
+
+    <!-- Top Scientific Row: Log & Exponentials -->
+    <button class="btn logfn" data-action="func"     data-value="ln">ln</button>
+    <button class="btn logfn" data-action="func"     data-value="log10">log</button>
+    <button class="btn logfn" data-action="func"     data-value="exp">eˣ</button>
+    <button class="btn logfn" data-action="constant" data-value="e">e</button>
+
+  </div><!-- /.buttons -->
+
+  <hr class="divider" />
+
+  <!-- 5-Column Numpad: Left Column has π, log₂, |x|, (empty/spacer) -->
+  <div class="numpad-grid">
+    <!-- Row 1 -->
+    <button class="btn logfn"    data-action="constant" data-value="pi">&#x03C0;</button>
+    <button class="btn modifier" data-action="clear">AC</button>
+    <button class="btn modifier" data-action="sign">&#177;</button>
+    <button class="btn modifier" data-action="percent">%</button>
+    <button class="btn operator" data-action="operator" data-value="div">&#247;</button>
+
+    <!-- Row 2 -->
+    <button class="btn logfn" data-action="func"   data-value="log2">log₂</button>
+    <button class="btn"       data-action="number" data-value="7">7</button>
+    <button class="btn"       data-action="number" data-value="8">8</button>
+    <button class="btn"       data-action="number" data-value="9">9</button>
+    <button class="btn operator" data-action="operator" data-value="mul">&#215;</button>
+
+    <!-- Row 3 -->
+    <button class="btn logfn" data-action="func"   data-value="abs">|x|</button>
+    <button class="btn"       data-action="number" data-value="4">4</button>
+    <button class="btn"       data-action="number" data-value="5">5</button>
+    <button class="btn"       data-action="number" data-value="6">6</button>
+    <button class="btn operator" data-action="operator" data-value="sub">&#8722;</button>
+
+    <!-- Row 4 -->
+    <button class="btn"       data-action="number" data-value="1" style="grid-column: 2">1</button>
+    <button class="btn"       data-action="number" data-value="2">2</button>
+    <button class="btn"       data-action="number" data-value="3">3</button>
+    <button class="btn operator" data-action="operator" data-value="add">+</button>
+
+    <!-- Row 5 -->
+    <button class="btn zero"  data-action="number" data-value="0" style="grid-column: 2 / span 2">0</button>
+    <button class="btn"       data-action="decimal">.</button>
+    <button class="btn equals" data-action="equals">=</button>
+  </div>
+</div>
+
+<script>
+  var cur = '0', prev = '', op = null, rst = false, mode = 'deg';
+  var expEl = document.getElementById('expression');
+  var resEl = document.getElementById('result');
+
+  var OPS = {
+    add: function(a,b){ return a+b; },
+    sub: function(a,b){ return a-b; },
+    mul: function(a,b){ return a*b; },
+    div: function(a,b){ return b===0 ? NaN : a/b; }
+  };
+  var LABELS = { add:'+', sub:'\u2212', mul:'\u00D7', div:'\u00F7' };
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('btn-deg').classList.toggle('active', m === 'deg');
+    document.getElementById('btn-rad').classList.toggle('active', m === 'rad');
+  }
+
+  function toRad(d) { return d * Math.PI / 180; }
+
+  function fmt(n) {
+    if (isNaN(n) || !isFinite(n)) return null;
+    return String(parseFloat(n.toPrecision(12)));
+  }
+
+  function upd(err) {
+    resEl.textContent = cur;
+    resEl.className = 'result' + (err ? ' error' : '');
+    var l = cur.length;
+    resEl.style.fontSize = l > 12 ? '1.4rem' : l > 9 ? '1.8rem' : '2.3rem';
+  }
+
+  function applyFunc(name) {
+    var val = parseFloat(cur);
+    var angle = mode === 'deg' ? toRad(val) : val;
+    var result;
+    if      (name === 'sin')   result = Math.sin(angle);
+    else if (name === 'cos')   result = Math.cos(angle);
+    else if (name === 'tan')   result = Math.abs(Math.cos(angle)) < 1e-10 ? NaN : Math.tan(angle);
+    else if (name === 'cosec') { result = 1 / Math.sin(angle); if (!isFinite(result)) result = NaN; }
+    else if (name === 'sec')   { result = 1 / Math.cos(angle); if (!isFinite(result)) result = NaN; }
+    else if (name === 'cot')   result = Math.abs(Math.sin(angle)) < 1e-10 ? NaN : Math.cos(angle) / Math.sin(angle);
+    else if (name === 'gif')   result = Math.floor(val);
+    else if (name === 'sqrt')  result = val < 0 ? NaN : Math.sqrt(val);
+    else if (name === 'ln')    result = val <= 0 ? NaN : Math.log(val);
+    else if (name === 'log10') result = val <= 0 ? NaN : Math.log10(val);
+    else if (name === 'log2')  result = val <= 0 ? NaN : Math.log2(val);
+    else if (name === 'exp')   result = Math.exp(val);
+    else if (name === 'abs')   result = Math.abs(val);
+    else result = val;
+
+    var err = isNaN(result) || !isFinite(result);
+    var lblMap = { gif: '\u230A' + cur + '\u230B', ln: 'ln(' + cur + ')',
+      log10: 'log(' + cur + ')', log2: 'log\u2082(' + cur + ')',
+      exp: 'e^(' + cur + ')', abs: '|' + cur + '|' };
+    var lbl = lblMap[name] || name + '(' + cur + ')';
+    expEl.textContent = lbl + ' =';
+    cur = err ? 'Undefined' : (fmt(result) || 'Error');
+    rst = true;
+    upd(err);
+  }
+
+  function inputConstant(name) {
+    var val = name === 'pi' ? String(Math.PI) : String(Math.E);
+    cur = val;
+    rst = true;
+    expEl.textContent = name === 'pi' ? '\u03C0' : 'e';
+    upd(false);
+  }
+
+  function num(n) {
+    if (rst) { cur = n; rst = false; } else { cur = cur === '0' ? n : cur + n; }
+    upd(false);
+  }
+  function dot() {
+    if (rst) { cur = '0.'; rst = false; } else if (!cur.includes('.')) cur += '.';
+    upd(false);
+  }
+  function oper(o) {
+    if (op && !rst) { var r = OPS[op](parseFloat(prev), parseFloat(cur)); cur = fmt(r) || 'Error'; upd(false); }
+    prev = cur; op = o; rst = true;
+    expEl.textContent = prev + ' ' + LABELS[o];
+    document.querySelectorAll('.btn.operator').forEach(function(b){ b.classList.toggle('active', b.dataset.value === o); });
+  }
+  function eq() {
+    if (!op) return;
+    var r = OPS[op](parseFloat(prev), parseFloat(cur));
+    expEl.textContent = prev + ' ' + LABELS[op] + ' ' + cur + ' =';
+    cur = fmt(r) || 'Error'; prev = ''; op = null; rst = true;
+    upd(false);
+    document.querySelectorAll('.btn.operator').forEach(function(b){ b.classList.remove('active'); });
+  }
+  function clr() {
+    cur = '0'; prev = ''; op = null; rst = false; expEl.textContent = '';
+    upd(false);
+    document.querySelectorAll('.btn.operator').forEach(function(b){ b.classList.remove('active'); });
+  }
+  function sign() {
+    if (['0','Undefined','Error'].indexOf(cur) >= 0) return;
+    cur = cur.startsWith('-') ? cur.slice(1) : '-' + cur;
+    upd(false);
+  }
+  function pct()  { cur = fmt(parseFloat(cur) / 100) || 'Error'; upd(false); }
+  function bksp() { if (rst) return; cur = cur.length > 1 ? cur.slice(0,-1) : '0'; upd(false); }
+
+  document.querySelector('.calculator').addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn'); if (!btn) return;
+    var a = btn.dataset.action, v = btn.dataset.value;
+    if      (a === 'number')   num(v);
+    else if (a === 'decimal')  dot();
+    else if (a === 'operator') oper(v);
+    else if (a === 'equals')   eq();
+    else if (a === 'clear')    clr();
+    else if (a === 'sign')     sign();
+    else if (a === 'percent')  pct();
+    else if (a === 'func')     applyFunc(v);
+    else if (a === 'constant') inputConstant(v);
+  });
+
+  document.addEventListener('keydown', function(e) {
+    var k = e.key;
+    if (k >= '0' && k <= '9') num(k);
+    else if (k === '.')       dot();
+    else if (k === '+')       oper('add');
+    else if (k === '-')       oper('sub');
+    else if (k === '*')       oper('mul');
+    else if (k === '/') { e.preventDefault(); oper('div'); }
+    else if (k === '%')                         pct();
+    else if (k === 'Enter' || k === '=')        eq();
+    else if (k === 'Backspace')                 bksp();
+    else if (k === 'Escape' || k === 'Delete')  clr();
+  });
+</script>
+
+</body>
+</html>
