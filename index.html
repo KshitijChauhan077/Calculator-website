@@ -199,11 +199,11 @@
   <!-- 5-Column Numpad: Left Column has π, log₂, |x|, (empty/spacer) -->
   <div class="numpad-grid">
     <!-- Row 1 -->
-    <button class="btn logfn"    data-action="constant" data-value="pi">&#x03C0;</button>
+    <button class="btn logfn"    data-action="constant"  data-value="pi">&#x03C0;</button>
     <button class="btn modifier" data-action="clear">AC</button>
-    <button class="btn modifier" data-action="sign">&#177;</button>
     <button class="btn modifier" data-action="percent">%</button>
-    <button class="btn operator" data-action="operator" data-value="div">&#247;</button>
+    <button class="btn modifier" data-action="backspace">&#x232B;</button>
+    <button class="btn operator" data-action="operator"  data-value="div">&#247;</button>
 
     <!-- Row 2 -->
     <button class="btn logfn" data-action="func"   data-value="log2">log₂</button>
@@ -341,15 +341,16 @@
   document.querySelector('.calculator').addEventListener('click', function(e) {
     var btn = e.target.closest('.btn'); if (!btn) return;
     var a = btn.dataset.action, v = btn.dataset.value;
-    if      (a === 'number')   num(v);
-    else if (a === 'decimal')  dot();
-    else if (a === 'operator') oper(v);
-    else if (a === 'equals')   eq();
-    else if (a === 'clear')    clr();
-    else if (a === 'sign')     sign();
-    else if (a === 'percent')  pct();
-    else if (a === 'func')     applyFunc(v);
-    else if (a === 'constant') inputConstant(v);
+    if      (a === 'number')    num(v);
+    else if (a === 'decimal')   dot();
+    else if (a === 'operator')  oper(v);
+    else if (a === 'equals')    eq();
+    else if (a === 'clear')     clr();
+    else if (a === 'sign')      sign();
+    else if (a === 'backspace') bksp();
+    else if (a === 'percent')   pct();
+    else if (a === 'func')      applyFunc(v);
+    else if (a === 'constant')  inputConstant(v);
   });
 
   document.addEventListener('keydown', function(e) {
