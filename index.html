@@ -187,17 +187,17 @@
     <!-- Section: Trig & Special -->
     <div class="section-label">&#9135; Trigonometric &amp; Special Functions &#9135;</div>
 
-    <button class="btn trig"    data-action="func" data-value="sin">sin</button>
-    <button class="btn trig"    data-action="func" data-value="cos">cos</button>
-    <button class="btn trig"    data-action="func" data-value="tan">tan</button>
-    <button class="btn special" data-action="func" data-value="gif">&#x230A;x&#x230B; GIF</button>
+    <button class="btn trig"    data-action="func"     data-value="sin">sin</button>
+    <button class="btn trig"    data-action="func"     data-value="cos">cos</button>
+    <button class="btn trig"    data-action="func"     data-value="tan">tan</button>
+    <button class="btn special" data-action="gif-toggle" id="btn-gif">[x] GIF</button>
 
-    <button class="btn trig"    data-action="func" data-value="cosec">cosec</button>
-    <button class="btn trig"    data-action="func" data-value="sec">sec</button>
-    <button class="btn trig"    data-action="func" data-value="cot">cot</button>
-    <button class="btn special" data-action="func" data-value="sqrt">&#x221A;x</button>
+    <button class="btn trig"    data-action="func"     data-value="cosec">cosec</button>
+    <button class="btn trig"    data-action="func"     data-value="sec">sec</button>
+    <button class="btn trig"    data-action="func"     data-value="cot">cot</button>
+    <button class="btn special" data-action="func"     data-value="sqrt">&#x221A;x</button>
 
-    <!-- Top Scientific Row: Parentheses, Power & Cube Root -->
+    <!-- Top Scientific Row: Parentheses, Cube Root, Power -->
     <button class="btn paren"   data-action="paren"    data-value="(">(</button>
     <button class="btn paren"   data-action="paren"    data-value=")">)</button>
     <button class="btn special" data-action="operator" data-value="pow">xʸ</button>
@@ -224,7 +224,7 @@
     <button class="btn operator" data-action="operator" data-value="mul">&#215;</button>
 
     <!-- Row 3 -->
-    <button class="btn logfn" data-action="func"   data-value="abs">|x|</button>
+    <button class="btn logfn" data-action="mod"    data-value="|">|x|</button>
     <button class="btn"       data-action="number" data-value="4">4</button>
     <button class="btn"       data-action="number" data-value="5">5</button>
     <button class="btn"       data-action="number" data-value="6">6</button>
@@ -275,12 +275,25 @@
       .replace(/\^/g, ' ^ ')
       .replace(/pi/g, '\u03C0')
       .replace(/sqrt\(/g, '\u221A(')
-      .replace(/cbrt\(/g, '\u221B(')
-      .replace(/gif\(/g, '\u230A')
-      .replace(/abs\(/g, '|');
+      .replace(/cbrt\(/g, '\u221B(');
+  }
+
+  function updateGifButtonState() {
+    var gifBtn = document.getElementById('btn-gif');
+    if (!gifBtn) return;
+    var openCount = (expr.match(/\[/g) || []).length;
+    var closeCount = (expr.match(/\]/g) || []).length;
+    if (openCount > closeCount) {
+      gifBtn.textContent = '] GIF';
+      gifBtn.title = 'Close greatest integer function';
+    } else {
+      gifBtn.textContent = '[x] GIF';
+      gifBtn.title = 'Open greatest integer function';
+    }
   }
 
   function updDisplay(isErr) {
+    updateGifButtonState();
     if (isErr) {
       resEl.textContent = 'Error';
       resEl.className = 'result error';
@@ -299,7 +312,7 @@
 
   function addChar(c) {
     if (isCalculated) {
-      if ('0123456789.(pi e sin cos tan cosec sec cot sqrt cbrt gif abs ln log10'.split(' ').some(function(k){ return c.startsWith(k); })) {
+      if ('0123456789.(pi e sin cos tan cosec sec cot sqrt cbrt abs ln log10 | [ ]'.split(' ').some(function(k){ return c.startsWith(k); })) {
         expr = '';
       }
       isCalculated = false;
@@ -344,6 +357,29 @@
     updDisplay(false);
   }
 
+  function addGifToggle() {
+    var openCount = (expr.match(/\[/g) || []).length;
+    var closeCount = (expr.match(/\]/g) || []).length;
+    var bracket = openCount > closeCount ? ']' : '[';
+    if (isCalculated) {
+      if (bracket === '[') expr = '';
+      isCalculated = false;
+      expEl.textContent = '';
+    }
+    expr += bracket;
+    updDisplay(false);
+  }
+
+  function addMod() {
+    if (isCalculated) {
+      expr = '';
+      isCalculated = false;
+      expEl.textContent = '';
+    }
+    expr += '|';
+    updDisplay(false);
+  }
+
   function addConstant(c) {
     if (isCalculated) {
       expr = '';
@@ -368,7 +404,7 @@
     }
     if (!expr) return;
     // Check multi-character function names at tail (e.g. cosec(, sqrt(, cbrt(, etc.)
-    var fns = ['cosec(', 'sec(', 'cot(', 'sin(', 'cos(', 'tan(', 'sqrt(', 'cbrt(', 'gif(', 'abs(', 'log10(', 'ln('];
+    var fns = ['cosec(', 'sec(', 'cot(', 'sin(', 'cos(', 'tan(', 'sqrt(', 'cbrt(', 'abs(', 'log10(', 'ln('];
     var matched = false;
     for (var i = 0; i < fns.length; i++) {
       if (expr.endsWith(fns[i])) {
@@ -390,9 +426,49 @@
     calculate();
   }
 
+  function parseModPairs(str) {
+    var barCount = (str.match(/\|/g) || []).length;
+    if (barCount % 2 !== 0) {
+      throw new Error('Unclosed modulus');
+    }
+    while (str.indexOf('|') !== -1) {
+      var first = str.indexOf('|');
+      var second = str.indexOf('|', first + 1);
+      if (second === -1) {
+        throw new Error('Unclosed modulus');
+      }
+      var inside = str.substring(first + 1, second);
+      str = str.substring(0, first) + '_abs(' + inside + ')' + str.substring(second + 1);
+    }
+    return str;
+  }
+
+  function parseGifPairs(str) {
+    var openCount = (str.match(/\[/g) || []).length;
+    var closeCount = (str.match(/\]/g) || []).length;
+    if (openCount !== closeCount) {
+      throw new Error('Unmatched GIF brackets');
+    }
+    // Parse innermost [ ... ] to _gif( ... )
+    while (str.indexOf('[') !== -1) {
+      var match = str.match(/\[([^\[\]]+)\]/);
+      if (!match) {
+        throw new Error('Mismatched GIF brackets');
+      }
+      str = str.replace(match[0], '_gif(' + match[1] + ')');
+    }
+    return str;
+  }
+
   function evaluateAlgebraic(rawExpr) {
     if (!rawExpr.trim()) return 0;
     var s = rawExpr;
+
+    // Convert paired |...| to _abs(...) and throw error if odd number of bars
+    s = parseModPairs(s);
+
+    // Convert paired [...] to _gif(...) and throw error if brackets are not closed
+    s = parseGifPairs(s);
 
     // Auto close unclosed parentheses
     var opens = (s.match(/\(/g) || []).length;
@@ -431,10 +507,8 @@
          .replace(/\bcosec\b/g, '_cosec')
          .replace(/\bsec\b/g, '_sec')
          .replace(/\bcot\b/g, '_cot')
-         .replace(/\bgif\b/g, '_gif')
          .replace(/\bsqrt\b/g, '_sqrt')
          .replace(/\bcbrt\b/g, '_cbrt')
-         .replace(/\babs\b/g, '_abs')
          .replace(/\bln\b/g, '_ln')
          .replace(/\blog10\b/g, '_log10');
 
@@ -471,9 +545,12 @@
   document.querySelector('.calculator').addEventListener('click', function(e) {
     var btn = e.target.closest('.btn'); if (!btn) return;
     var a = btn.dataset.action, v = btn.dataset.value;
-    if      (a === 'number')    addChar(v);
-    else if (a === 'decimal')   addChar('.');
-    else if (a === 'paren')     addParen(v);
+    if      (a === 'number')     addChar(v);
+    else if (a === 'decimal')    addChar('.');
+    else if (a === 'paren')      addParen(v);
+    else if (a === 'gif-toggle') addGifToggle();
+    else if (a === 'gif')        addGif(v);
+    else if (a === 'mod')        addMod();
     else if (a === 'operator') {
       if (v === 'add') addOp('+');
       else if (v === 'sub') addOp('-');
@@ -494,6 +571,8 @@
     if (k >= '0' && k <= '9') addChar(k);
     else if (k === '.')       addChar('.');
     else if (k === '(' || k === ')') addParen(k);
+    else if (k === '[' || k === ']') addGif(k);
+    else if (k === '|')       addMod();
     else if (k === '+')       addOp('+');
     else if (k === '-')       addOp('-');
     else if (k === '*')       addOp('*');
